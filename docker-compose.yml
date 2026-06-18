@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER:     netadmin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB:       netadmin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netadmin"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL:  postgresql+asyncpg://netadmin:secret@db:5432/netadmin
+      REDIS_URL:     redis://redis:6379/0
+      SECRET_KEY:    changeme-use-a-long-random-string-in-production
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      REFRESH_TOKEN_EXPIRE_DAYS:   7
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: celery -A app.worker worker --loglevel=info --concurrency=4
+    environment:
+      DATABASE_URL: postgresql+asyncpg://netadmin:secret@db:5432/netadmin
+      REDIS_URL:    redis://redis:6379/0
+      SECRET_KEY:   changeme-use-a-long-random-string-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Permissions réseau pour ICMP raw sockets
+    cap_add:
+      - NET_RAW
+
+volumes:
+  pgdata:
