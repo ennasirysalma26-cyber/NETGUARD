@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # NetAdmin API — FastAPI
 
 API REST complète pour la gestion des équipements réseau.
@@ -130,3 +131,7 @@ En production avec Docker, la permission est activée via :
 cap_add:
   - NET_RAW
 ```
+=======
+# NETGUARD
+Une application web Full-Stack moderne développée avec FastAPI (Backend), React.js (Frontend) et PostgreSQL (Base de données). Dockerisée pour un déploiement facile.
+>>>>>>> 7d6010fd4b536e70a7b4a118c754af652332c1a8
