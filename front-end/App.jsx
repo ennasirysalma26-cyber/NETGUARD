@@ -1,4 +1,7 @@
 import { useState } from "react";
+
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Equipment from "./pages/Equipment";
@@ -6,12 +9,35 @@ import Alerts from "./pages/Alerts";
 import Users from "./pages/Users";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import "./styles/global.css";
+import "./global.css";
+
+const ProtectedRoute = ({ isAuthenticated, children }) => {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+const AppLayout = ({ currentUser, handleLogout }) => {
+  return (
+    <div className="app-layout">
+      <Sidebar /> 
+      <div className="main-content">
+        <Header user={currentUser} onLogout={handleLogout} />
+        <div className="page-content">
+          
+
+          
+          <Outlet /> 
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [activePage, setActivePage] = useState("dashboard");
 
   const handleLogin = (user) => {
     setCurrentUser(user);
@@ -21,32 +47,35 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
-    setActivePage("dashboard");
-  };
-
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  const renderPage = () => {
-    switch (activePage) {
-      case "dashboard": return <Dashboard />;
-      case "equipment": return <Equipment />;
-      case "alerts": return <Alerts />;
-      case "users": return <Users />;
-      default: return <Dashboard />;
-    }
   };
 
   return (
-    <div className="app-layout">
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
-      <div className="main-content">
-        <Header user={currentUser} onLogout={handleLogout} activePage={activePage} />
-        <div className="page-content">
-          {renderPage()}
-        </div>
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />
+        } />
+
+        
+        <Route path="/" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AppLayout currentUser={currentUser} handleLogout={handleLogout} />
+          </ProtectedRoute>
+        }>
+        
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="equipment" element={<Equipment />} />
+          <Route path="alerts" element={<Alerts />} />
+          <Route path="users" element={<Users />} />
+          
+         
+          <Route index element={<Navigate to="/dashboard" replace />} />
+        </Route>
+
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
