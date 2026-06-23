@@ -50,7 +50,9 @@ services:
         condition: service_healthy
 
   worker:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     command: celery -A app.worker worker --loglevel=info --concurrency=4
     environment:
       DATABASE_URL: postgresql+asyncpg://netadmin:secret@db:5432/netadmin
