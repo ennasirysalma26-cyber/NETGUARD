@@ -29,7 +29,9 @@ services:
       retries: 5
 
   api:
-    build: .
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       DATABASE_URL:  postgresql+asyncpg://netadmin:secret@db:5432/netadmin
@@ -40,7 +42,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - ./backend:/app
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +50,9 @@ services:
         condition: service_healthy
 
   worker:
-    build: .
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     command: celery -A app.worker worker --loglevel=info --concurrency=4
     environment:
       DATABASE_URL: postgresql+asyncpg://netadmin:secret@db:5432/netadmin
